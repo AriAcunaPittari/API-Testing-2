@@ -20,8 +20,8 @@ export class Schemas {
   ordersList = z.array(this.order);
 
   createOrder = z.object({
-    bookId: z.number(),
-    customerName: z.string(),
+    created: z.boolean(),
+    orderId: z.string(),
   });
 
   updateOrder = z.object({

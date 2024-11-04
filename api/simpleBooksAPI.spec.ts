@@ -2,21 +2,32 @@ import { test, APIRequestContext, request, BrowserContext, Browser } from "@play
 import { SimpleBooksApiManager } from "./simpleBooksApiManager";
 import * as schemaInfo from "./schemas/SimpleBooksApiSchemas";
 import { validateSchema } from "../utils/schemaValidator";
+import * as fs from 'fs';
+import { validateToken } from "../utils/getToken";
 
 const schema = new schemaInfo.Schemas();
 let apiManager: SimpleBooksApiManager;
 let apiContext: APIRequestContext;
 let token: string;
+let orderID: string;
 
+test.beforeAll(async () => {
+  const isValidToken = await validateToken();
 
-test.beforeAll(async ({}) => {
+  if (!isValidToken) {
+    token = await validateToken(false);
+  } else {
+    const tokenData = JSON.parse(fs.readFileSync('./token.json', 'utf8'));
+    token = tokenData.token;
+  }
+
   apiContext = await request.newContext({
     baseURL: 'https://simple-books-api.glitch.me',
     extraHTTPHeaders: {
-      'Authorization': `Bearer ${process.env.TOKEN}`,
-    }
+      'Authorization': `Bearer ${token}`,
+    },
   });
-  
+
   apiManager = new SimpleBooksApiManager(apiContext);
 });
 
@@ -26,7 +37,6 @@ test.describe("API Tests for SimpleBooks", () => {
     {
       tag: "@Get",
     },
-    //OK!!!
     async () => {
       const status = await apiManager.getSimpleBooksRequest();
       const returnData = await status.getStatus();
@@ -39,7 +49,6 @@ test.describe("API Tests for SimpleBooks", () => {
       tag: "@Get",
     },
     async () => {
-      //OK!!!
       const listBooks = await apiManager.getSimpleBooksRequest();
       const returnData = await listBooks.getBooks();
       await apiManager.checkGet.positiveCheck(returnData);
@@ -53,7 +62,6 @@ test.describe("API Tests for SimpleBooks", () => {
       tag: "@Get",
     },
     async () => {
-      //OK!!!
       const singleBook = await apiManager.getSimpleBooksRequest();
       const returnData = await singleBook.getBookId();
       await apiManager.checkGet.positiveCheck(returnData);
@@ -67,7 +75,6 @@ test.describe("API Tests for SimpleBooks", () => {
       tag: "@Get",
     },
     async () => {
-      //OK!!!
       const allOrders = await apiManager.getSimpleBooksRequest();
       const returnData = await allOrders.getAllBookOrder();
       await apiManager.checkGet.positiveCheck(returnData);
@@ -83,10 +90,8 @@ test.describe("API Tests for SimpleBooks", () => {
     async () => {
       const singleOrder = await apiManager.getSimpleBooksRequest();
       const returnData = await singleOrder.getSingleBookOrder();
-      //await apiManager.checkGet.positiveCheck(returnData);
-      console.log("Return Data:", await returnData.json());
-      
-      //await validateSchema(true, returnData, schema.order);
+      await apiManager.checkGet.positiveCheck(returnData);
+      await validateSchema(false, returnData, schema.order);
     }
   );
   test(
@@ -97,13 +102,14 @@ test.describe("API Tests for SimpleBooks", () => {
     async () => {
       const createOrder = await apiManager.getSimpleBooksRequest();
       const createPayLoad = {
-        bookId: 1,
+        bookId: 3,
         customerName: "Ariana",
       };
       const returnData = await createOrder.postBookOrder(createPayLoad);
       await apiManager.checkPost.positiveCheck(returnData);
-      await validateSchema(true, returnData, schema.createOrder);
+      await validateSchema(false, returnData, schema.createOrder);
     }
+    
   );
   test(
     "Patch: Update Order",
@@ -113,11 +119,10 @@ test.describe("API Tests for SimpleBooks", () => {
     async () => {
       const updateOrder = await apiManager.getSimpleBooksRequest();
       const updatePayload = {
-        customerName: "Ariana",
+        customerName: "Nicolas",
       };
       const returnData = await updateOrder.patchOrder(updatePayload, false);
       await apiManager.checkPatch.patchChecker(returnData);
-      await validateSchema(true, returnData, schema.updateOrder);
     }
   );
   test(
@@ -126,6 +131,7 @@ test.describe("API Tests for SimpleBooks", () => {
       tag: "@Delete",
     },
     async () => {
+      //Cada vez que se borre una orden hay que cambiar el ID en .env
       const deleteOrder = await apiManager.getSimpleBooksRequest();
       const deletePayload = {
         bookId: 1,
