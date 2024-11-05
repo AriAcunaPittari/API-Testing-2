@@ -8,23 +8,16 @@ import { validateToken } from "../utils/getToken";
 const schema = new schemaInfo.Schemas();
 let apiManager: SimpleBooksApiManager;
 let apiContext: APIRequestContext;
-let token: string;
+let validToken: string;
 let orderID: string;
 
 test.beforeAll(async () => {
-  const isValidToken = await validateToken();
-
-  if (!isValidToken) {
-    token = await validateToken(false);
-  } else {
-    const tokenData = JSON.parse(fs.readFileSync('./token.json', 'utf8'));
-    token = tokenData.token;
-  }
+  validToken = await validateToken();
 
   apiContext = await request.newContext({
     baseURL: 'https://simple-books-api.glitch.me',
     extraHTTPHeaders: {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${validToken}`,
     },
   });
 
